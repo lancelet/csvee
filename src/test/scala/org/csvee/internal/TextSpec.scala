@@ -20,12 +20,16 @@ Text
   - splitBefore splits general strings $splitBeforeProp
   - splitBefore is correct (ad-hoc) $splitBeforeAdHoc
 
-  - splitBeforeIsolated empty $splitBeforeIsolatedEmpty
-  - splitBeforeIsolated char not present (ad-hoc) $splitBeforeIsolatedMissing
-  - splitBeforeIsolated isolated char not present (ah-hoc) $splitBeforeIsoM2
-  - splitBeforeIsolated isolated char not present $splitBeforeIsolatedProp2
-  - splitBeforeIsolated splits general strings $splitBeforeIsolatedProp
-  - splitBeforeIsolated is correct (ad-hoc) $splitBeforeIsolatedAdHoc
+  - splitBeforeUnescaped empty $splitBeforeUneEmpty
+  - splitBeforeUnescaped char not present (ad-hoc) $splitBeforeUneMissing
+  - splitBeforeUnescaped unescaped char not present (ad-hoc) $splitBeforeUneUneMissing
+  - splitBeforeUnescaped when escape and split are the same (ad-hoc) $splitBeforeUneES
+  - splitBeforeUnescaped tricky case (ad-hoc) $splitBeforeUneTricky
+  - splitBeforeUnescaped ambiguous escape (ad-hoc) $splitBeforeUneAmb
+  - splitBeforeUnescaped ambiguous escape 2 (ad-hoc) $splitBeforeUneAmb2
+  - splitBeforeUnescaped unescapted char not present $splitBeforeUneMissingProp
+  - splitBeforeUnescaped splits general strings $splitBeforeUneProp
+  - splitBeforeUnescaped is correct (ad-hoc) $splitBeforeUneAdHoc
 
   - tail returns None for empty $tailEmpty
   - tail is correct (ad-hoc) $tailAdHoc
@@ -89,44 +93,81 @@ Text
     (r must beEqualTo(",World"))
   }
 
-  def splitBeforeIsolatedEmpty =
-    Text.empty.splitBeforeIsolated(',') must beEqualTo((Text.empty, Text.empty))
+  def splitBeforeUneEmpty =
+    Text.empty.splitBeforeUnescaped(',', '\\') must
+      beEqualTo((Text.empty), Text.empty)
 
-  def splitBeforeIsolatedMissing = {
+  def splitBeforeUneMissing = {
     val expected = (Text("Hello"), Text.empty)
-    Text("Hello").splitBeforeIsolated(',') must beEqualTo(expected)
+    Text("Hello").splitBeforeUnescaped(',', '\\') must beEqualTo(expected)
   }
 
-  def splitBeforeIsoM2 = {
-    val expected = (Text("Hello"), Text.empty)
-    Text("Hello").splitBeforeIsolated('l') must beEqualTo(expected)
+  def splitBeforeUneUneMissing = {
+    val expected = (Text("ab\\,cd"), Text.empty)
+    Text("ab\\,cd").splitBeforeUnescaped(',', '\\') must beEqualTo(expected)
   }
 
-  def splitBeforeIsolatedProp = prop (
+  def splitBeforeUneES = {
+    val expected = ("He", "lo")
+    val (lt, rt) = Text("Helo").splitBeforeUnescaped('l', 'l')
+    val r = (lt.materialize, rt.materialize)
+    r must beEqualTo(expected)
+  }
+
+  def splitBeforeUneTricky = {
+    val expected = ("Hello", "\",\"World\"")
+    val (lt, rt) = Text("Hello\",\"World\"").splitBeforeUnescaped('"', '"')
+    val r = (lt.materialize, rt.materialize)
+    r must beEqualTo(expected)
+  }
+
+  def splitBeforeUneAmb = {
+    val expected = ("Hell", "lo")
+    val (lt, rt) = Text("Helllo").splitBeforeUnescaped('l', 'l')
+    val r = (lt.materialize, rt.materialize)
+    r must beEqualTo(expected)
+  }
+
+  def splitBeforeUneAmb2 = {
+    val expected = (Text("Hellllo"), Text.empty)
+    Text("Hellllo").splitBeforeUnescaped('l', 'l') must beEqualTo(expected)
+  }
+
+  def splitBeforeUneMissingProp = prop(
     (s1: String, s2: String) =>
-    (!s1.contains(',') && !s2.contains(',')) ==>
+    (
+      !s1.contains(',')  &&
+      !s1.contains('\\') &&
+      !s2.contains(',')  &&
+      !s2.contains('\\')
+    ) ==>
       {
-        val (lt, rt) = Text(s1 + "," + s2).splitBeforeIsolated(',')
+        val (lt, rt) = Text(s1 + "\\," + s2).splitBeforeUnescaped(',', '\\')
+        val (l, r) = (lt.materialize, rt.materialize)
+        (l === (s1 + "\\," + s2) and (r === ""))
+      }
+  )
+
+  def splitBeforeUneProp = prop (
+    (s1: String, s2: String) =>
+    (
+      !s1.contains(',')  &&
+      !s1.contains('\\') &&
+      !s2.contains(',')  &&
+      !s2.contains('\\')
+    ) ==>
+      {
+        val (lt, rt) = Text(s1 + "," + s2).splitBeforeUnescaped(',', '\\')
         val (l, r) = (lt.materialize, rt.materialize)
         (l === s1) and (r === ("," + s2))
       }
   )
 
-  def splitBeforeIsolatedProp2 = prop (
-    (s1: String, s2: String) =>
-    (!s1.contains(',') && !s2.contains(',')) ==>
-      {
-        val (lt, rt) = Text(s1 + ",," + s2).splitBeforeIsolated(',')
-        val (l, r) = (lt.materialize, rt.materialize)
-        (l === (s1 + ",," + s2)) and (r === "")
-      }
-  )
-
-  def splitBeforeIsolatedAdHoc = {
-    val (lt, rt) = Text("Hello,World").splitBeforeIsolated(',')
+  def splitBeforeUneAdHoc = {
+    val (lt, rt) = Text("Hello,Nice\\, World").splitBeforeUnescaped(',', '\\')
     val (l, r) = (lt.materialize, rt.materialize)
     (l must beEqualTo("Hello")) and
-    (r must beEqualTo(",World"))
+    (r must beEqualTo(",Nice\\, World"))
   }
 
   def tailEmpty =

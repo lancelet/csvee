@@ -37,14 +37,14 @@ trait Text {
   def splitBefore(c: Char): (Text, Text)
 
   /**
-   * Splits the `Text` just before an isolated occurrence of a given character.
+   * Splits the `Text` just before an unescaped occurrence of a given character.
    *
-   * In order to split, the character `c` must occur by itself, not doubled-up
-   * (ie. not immediately followed by itself). If the character `c` never
-   * occurs in an isolated position in the `Text`, then this method returns a
-   * tuple of this `Text` and an empty `Text` object.
+   * In order to split, the character `c` must occur in a location where it is
+   * not preceded by the `escape` character. If the character `c` never occurs
+   * in an unescaped position in the `Text`, then this method returns a tuple
+   * of this `Text` and an empty `Text` object.
    */
-  def splitBeforeIsolated(c: Char): (Text, Text)
+  def splitBeforeUnescaped(c: Char, escape: Char): (Text, Text)
 
   /**
    * Optionally returns the `Text` without the starting character.
@@ -94,20 +94,41 @@ private final case class SText(
       (SText(underlying, beg, i), SText(underlying, i, end))
   }
 
-  def splitBeforeIsolated(c: Char): (Text, Text) = {
+  def splitBeforeUnescaped(c: Char, escape: Char): (Text, Text) = {
     @tailrec
     def findIndex(start: Int): Int = {
-      // yee ha! y'all hold your hats for some index fiddlin'...
+      assert(c != escape)
+
+      val esci = underlying.indexOf(escape, start)
+      val chri = underlying.indexOf(c,      start)
+
+      if (chri == -1 || chri >= end)
+        -1
+      else if (esci == -1 || chri != (esci + 1))
+        chri
+      else
+        findIndex(chri + 1)
+    }
+
+    @tailrec
+    def findIndexCE(start: Int): Int = {
+      assert (c == escape)
+
       val i = underlying.indexOf(c, start)
       if (i == -1 || i >= end)
         -1
-      else if (i == (end - 1) || underlying(i + 1) != c)
+      else if (i >= (end - 1) || underlying(i + 1) != c)
         i
       else
-        findIndex(i + 2)
+        findIndexCE(i + 2)
     }
 
-    val j = findIndex(beg)
+    val j =
+      if (c != escape)
+        findIndex(beg)
+      else
+        findIndexCE(beg)
+
     if (j == -1)
       (this, Text.empty)
     else

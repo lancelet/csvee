@@ -24,7 +24,7 @@ final case class CsvDecode(config: CsvConfig = CsvConfig.default) {
     for {
       fields           <- decodeFields(Text(input), sizeHint)
       val materialized = fields.map(_.materialize)
-      val unquoted     = materialized.map(unquote)
+      val unquoted     = materialized.map(unescape)
     } yield unquoted
 
   //------------------------------------------------------------------- Private
@@ -43,7 +43,7 @@ final case class CsvDecode(config: CsvConfig = CsvConfig.default) {
     accumFields(builder, txt)
   }
 
-  private def unquote(s: String): String =
+  private def unescape(s: String): String =
     s.replace(s"$escape$quote", s"$quote")
 
   @tailrec
@@ -77,7 +77,7 @@ final case class CsvDecode(config: CsvConfig = CsvConfig.default) {
     assert(txt.startsWith(quote))
     val result: Option[(Field, Text)] = for {
       afterQuote <- txt.tail
-      val (field, remt) = afterQuote.splitBeforeIsolated(quote)
+      val (field, remt) = afterQuote.splitBeforeUnescaped(quote, escape)
       rem <- remt.tail
     } yield ((field, rem))
     result match {
