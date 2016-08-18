@@ -4,6 +4,7 @@ lazy val csvee =
     .settings(
       name := "csvee",
       version := "0.1",
+      organization := "com.github.lancelet",
       scalaVersion := "2.11.8",
       libraryDependencies ++= Seq(
         "org.typelevel"  %% "cats"              %  "0.6.1",
