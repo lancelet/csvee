@@ -1,4 +1,4 @@
-package org.csvee
+package com.github.lancelet.csvee
 
 /** TODO */
 final case class CsvConfig(separator: Char, quote: Char, escape: Char) {

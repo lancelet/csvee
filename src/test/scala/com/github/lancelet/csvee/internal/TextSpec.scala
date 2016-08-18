@@ -1,4 +1,4 @@
-package org.csvee.internal
+package com.github.lancelet.csvee.internal
 
 import org.scalacheck.Prop
 import org.specs2.{ScalaCheck, Specification}

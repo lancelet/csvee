@@ -1,9 +1,9 @@
-package org.csvee
+package com.github.lancelet.csvee
 
 import scala.annotation.tailrec
 import scala.collection.immutable.{VectorBuilder, Vector}
 
-import org.csvee.internal.Text
+import com.github.lancelet.csvee.internal.Text
 
 import cats.data.Xor
 

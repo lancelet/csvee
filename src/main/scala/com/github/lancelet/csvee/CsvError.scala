@@ -1,4 +1,4 @@
-package org.csvee
+package com.github.lancelet.csvee
 
 sealed trait CsvError
 
