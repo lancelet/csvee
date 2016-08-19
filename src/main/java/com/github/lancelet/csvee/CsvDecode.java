@@ -1,6 +1,5 @@
 package com.github.lancelet.csvee;
 
-import java.lang.reflect.Array;
 import java.util.Vector;
 
 public final class CsvDecode {
@@ -21,8 +20,7 @@ public final class CsvDecode {
         this.quoteCharSeq = new String(quoteCharSeqArray);
     }
 
-    @SuppressWarnings("unchecked")
-    public Result<String[], CsvError> decodeLine(String input, int sizeHint) {
+    public CsvResult<String[]> decodeLine(String input, int sizeHint) {
         Vector<String> buffer;
         if (sizeHint != -1)
             buffer = new Vector<String>(sizeHint);
@@ -37,10 +35,8 @@ public final class CsvDecode {
                 // a quoted field
                 fieldStart = i + 1;
                 fieldEnd = unescapedIndexOf(input, quote, fieldStart);
-                if (fieldEnd == -1) {
-                    return (Result<String[], CsvError>)
-                        Result.ko(new CsvError("Field was missing a closing quote."));
-                }
+                if (fieldEnd == -1)
+                    return error(CsvError.Type.ClosingQuoteMissing, fieldStart);
                 field = unescape(input.substring(fieldStart, fieldEnd));
                 i = fieldEnd + 1;
             } else {
@@ -48,33 +44,28 @@ public final class CsvDecode {
                 fieldStart = i;
                 fieldEnd = nextSeparator(input, fieldStart);
                 field = input.substring(fieldStart, fieldEnd);
-                if (field.contains(quoteCharSeq)) {
-                    return (Result<String[], CsvError>)
-                        Result.ko(new CsvError("Free quote occurs in unquoted field."));
-                }
+                if (field.contains(quoteCharSeq))
+                    return error(CsvError.Type.FreeQuoteInUnquotedField,
+                                 fieldStart);
                 i = fieldEnd;
             }
 
             // skip over the separator
-            if (i < input.length() && input.charAt(i) != separator) {
-                return (Result<String[], CsvError>)
-                    Result.ko(new CsvError("Field was not followed by a separator."));
-            }
+            if (i < input.length() && input.charAt(i) != separator)
+                return error(CsvError.Type.FieldNotFollowedBySeparator, i);
             i++;
 
             // check for a terminal separator on the line
-            if (i == input.length()) {
-                return (Result<String[], CsvError>)
-                    Result.ko(new CsvError("Line was terminated by a separator."));
-            }
+            if (i == input.length())
+                return error (CsvError.Type.LineTerminatedBySeparator, i-1);
 
             buffer.add(field);
         }
 
-        String[] strings = (String[])(Array.newInstance(String.class, buffer.size()));
+        String[] strings = new String[buffer.size()];
         buffer.toArray(strings);
 
-        return (Result<String[], CsvError>) Result.ok(strings);
+        return CsvResult.ok(strings);
     }
 
     private String unescape(String str) {
@@ -119,4 +110,8 @@ public final class CsvDecode {
 
     private final CharSequence escapedQuote;
     private final CharSequence quoteCharSeq;
+
+    private static <T> CsvResult<T> error(CsvError.Type type, int col) {
+        return CsvResult.fail(new CsvError(type, col));
+    }
 }
