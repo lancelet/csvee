@@ -4,7 +4,6 @@ package com.github.lancelet.csvee;
  * Disjunction type representing either success or failure of an operation.
  */
 public final class CsvResult<T> {
-
     public static <T> CsvResult<T> ok(T value) {
         assert(value != null);
         return new CsvResult<T>(value, null);
@@ -13,11 +12,6 @@ public final class CsvResult<T> {
     public static <T> CsvResult<T> fail(CsvError error) {
         assert(error != null);
         return new CsvResult<T>(null, error);
-    }
-
-    private CsvResult(T value, CsvError error) {
-        this.value = value;
-        this.error = error;
     }
 
     public boolean isSuccess() { return value != null; }
@@ -34,6 +28,13 @@ public final class CsvResult<T> {
         if (error == null)
             throw NoResultException.instance;
         return error;
+    }
+
+    //----------------------------------------------------------------- Private
+
+    private CsvResult(T value, CsvError error) {
+        this.value = value;
+        this.error = error;
     }
 
     private final T value;
