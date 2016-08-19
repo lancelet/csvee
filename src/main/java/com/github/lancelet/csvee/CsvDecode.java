@@ -37,7 +37,8 @@ public final class CsvDecode {
                 fieldEnd = unescapedIndexOf(input, quote, fieldStart);
                 if (fieldEnd == -1)
                     return error(CsvError.Type.ClosingQuoteMissing, fieldStart);
-                field = unescape(input.substring(fieldStart, fieldEnd));
+                field = input.substring(fieldStart, fieldEnd)
+                             .replace(escapedQuote, quoteCharSeq);
                 i = fieldEnd + 1;
             } else {
                 // a non-quoted field
@@ -68,38 +69,29 @@ public final class CsvDecode {
         return CsvResult.ok(strings);
     }
 
-    private String unescape(String str) {
-        return str.replace(escapedQuote, quoteCharSeq);
-    }
-
     private int nextSeparator(String str, int start) {
         int i = str.indexOf(separator, start);
         return (i == -1) ? str.length() : i;
     }
 
-    private int unescapedIndexOf(String str, char c, int start) {
+    private int unescapedIndexOf(String s, char c, int start) {
+        int l = s.length() - 1;
         int i;
         if (c == escape) {
             // case where c happens to match the escape character
             i = start - 2;
-            do {
-                i = str.indexOf(c, i + 2); 
-            } while (
-                     (i != -1) &&
-                     (i < (str.length()-1) && str.charAt(i+1) == c)
-                    );
+            do
+                i = s.indexOf(c, i + 2); 
+            while ((i != -1) && (i < l && s.charAt(i+1) == c));
         } else {
             // case where c does not match the escape character
             i = start - 1;
             int esci;
             do {
                 i += 1;
-                i    = str.indexOf(c,      i);
-                esci = str.indexOf(escape, i);
-            } while (
-                     (i != -1) &&
-                     (esci != -1 && i == (esci+1))
-                    );
+                i = s.indexOf(c, i);
+                esci = s.indexOf(escape, i);
+            } while ((i != -1) && (esci != -1 && i == (esci+1)));
         }
         return i;
     }
