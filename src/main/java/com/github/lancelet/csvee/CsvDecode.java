@@ -20,6 +20,10 @@ public final class CsvDecode {
         this.quoteCharSeq = new String(quoteCharSeqArray);
     }
 
+    public CsvResult<String[]> decodeLine(String input) {
+        return decodeLine(input, -1);
+    }
+
     public CsvResult<String[]> decodeLine(String input, int sizeHint) {
         Vector<String> buffer;
         if (sizeHint != -1)
