@@ -7,8 +7,8 @@ import java.io.Reader;
  * Escape-aware Reader.
  *
  * This class should be used as a streaming source of characters. It wraps a
- * `Reader` with capability to read escape sequences that are relevant to CSV,
- * and to push-back (un-read) characters.
+ * `Reader` with the capability to read escape sequences that are relevant to
+ * CSV, and to push-back (un-read) characters.
  */
 public final class EscapableReader {
 
@@ -22,10 +22,12 @@ public final class EscapableReader {
     }
 
     /**
-     * Returns the next character from the Reader, or -1 if some non-stream
-     * status occurred.
+     * Returns the next character from the Reader, or -1 if no character is
+     * available.
      *
-     * To determine the nature of the status, call the `getStatus()` method.
+     * To determine the status, call the `getStatus()` method. A return value
+     * of -1 does NOT always mean EOF; it may correspond to EOF, an invalid
+     * escape, or an IOException.
      */
     public final int next() {
         if (status != STATUS_OK) {
