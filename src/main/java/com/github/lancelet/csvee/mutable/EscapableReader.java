@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.Reader;
 
 /**
- * Reader work-alike that knows about escape sequences.
+ * Escape-aware Reader.
+ *
+ * This class should be used as a streaming source of characters. It wraps a
+ * `Reader` with capability to read escape sequences that are relevant to CSV,
+ * and to push-back (un-read) characters.
  */
 public final class EscapableReader {
 
@@ -18,12 +22,12 @@ public final class EscapableReader {
     }
 
     /**
-     * Returns the next character from the Reader, or -1 if some non-character
+     * Returns the next character from the Reader, or -1 if some non-stream
      * status occurred.
      *
      * To determine the nature of the status, call the `getStatus()` method.
      */
-    public int next() {
+    public final int next() {
         if (status != STATUS_OK) {
             return -1;
         } else if (havePushback) {
@@ -46,7 +50,6 @@ public final class EscapableReader {
                         return -1;
                     }
                 }
-                haveChar = true;
             } catch (IOException ex) {
                 ioException = ex;
                 status = STATUS_IOEXCEPTION;
@@ -60,17 +63,17 @@ public final class EscapableReader {
      * Pushes a character back to the Reader. (The reader can only accept a
      * single character push-back).
      */
-    public void unNext(char c) {
+    public final void push(char c) {
         havePushback = true;
         pushback = c;
     }
 
-    public IOException getException() {
+    public final IOException getException() {
         assert(status == STATUS_IOEXCEPTION);
         return ioException;
     }
 
-    public byte getStatus() { return status; }
+    public final byte getStatus() { return status; }
 
     public static byte STATUS_OK             = 0;
     public static byte STATUS_EOF            = 1;
@@ -87,7 +90,6 @@ public final class EscapableReader {
     private byte status = STATUS_OK;
     private IOException ioException = null;
 
-    private boolean haveChar = false;
     private boolean havePushback = false;
     private char pushback = 'X';
 }
